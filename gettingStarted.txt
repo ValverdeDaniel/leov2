@@ -1,0 +1,5 @@
+# activate virtual environment leovenv
+.\leovenv\Scripts\activate 
+
+# start django project named leonardo
+django-admin startproject leonardo . 
