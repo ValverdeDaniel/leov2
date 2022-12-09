@@ -33,12 +33,19 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'pages.apps.PagesConfig',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    'listings.apps.ListingsConfig',
+    'realtors.apps.RealtorsConfig',
+    'accounts.apps.AccountsConfig',
+    'contacts.apps.ContactsConfig',
+    'options.apps.OptionsConfig',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    'django.contrib.humanize',
+
 ]
 
 MIDDLEWARE = [
@@ -76,9 +83,13 @@ WSGI_APPLICATION = 'leonardo.wsgi.application'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        'PORT': '5432', #we added this manually it is usually 5432
+        "NAME": "btredb",
+        'USER': 'postgres',
+        'PASSWORD': '44Mooses',
+        'HOST': 'localhost'
     }
 }
 

@@ -3,3 +3,22 @@
 
 # start django project named leonardo
 django-admin startproject leonardo . 
+
+
+
+pip freeze
+python -m venv ./venv #create virtual environment
+.\venv\Scripts\activate #activate virtual environment
+python manage.py help
+python manage.py
+python manage.py runserver #run project
+python manage.py migrate
+python manage.py makemigration
+
+################
+#steps to create new app within django environment
+python manage.py startapp contacts #create app called contacts
+#create a model within that app
+python manage.py makemigrations contacts #create migration file contacts
+python manage.py migrate
+################
