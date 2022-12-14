@@ -5,6 +5,58 @@
 {% block title %} | Welcome {% endblock %}
 
 {% block content %}
-<p>options page</p>
+<!-- Showcase -->
+<section id="showcase">
+    <div class="container text-center">
+        <div class="home-search p-5">
+        <div class="overlay p-5">
+            <h1 class="display-4 mb-4">
+            Check Out These Options
+            </h1>
+            <p class="lead">Welcome to Leonardo your one stop shop for all your options information related needs</p>
+            <div class="search">
+            <form action="{% url 'search' %}">
+                <!-- Form Row 1 -->
+                <div class="form-row">
+                <div class="col-md-4 mb-3">
+                    <label>StochK</label>
+                    <input type="text" name="StochK" class="form-control" placeholder="StochK" value = 25>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label>mktCapMin</label>
+                    <input type="text" name="mktCapMin" class="form-control" placeholder="mktCapMin" value = 5000000000>
+                </div>
 
+                <div class="col-md-4 mb-3">
+                    <label>macd_macd</label>
+                    <input type="text" name="macd_macd" class="form-control" placeholder="macd_macd" value = 0>
+                </div>
+    
+
+                </div>
+                <!-- Form Row 2 -->
+                <div class="form-row">
+                    <div class="col-md-4 mb-3">
+                        <label>StochD</label>
+                        <input type="text" name="StochD" class="form-control" placeholder="StochD" value = 25>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label>div_yield_recent</label>
+                        <input type="text" name="div_yield_recent" class="form-control" placeholder="div_yield_recent" value = 2>
+                    </div>     
+                    <div class="col-md-4 mb-3">
+                        <label>macd_signal</label>
+                        <input type="text" name="macd_signal" class="form-control" placeholder="macd_signal" value = 0>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-block mt-4" type="submit">Submit form</button>
+            </form>
+            </div>
+        </div>
+        </div>
+    </div>
+    </section>
+{{ quotes }}
+
+{{ myTickers }}
 {% endblock %}

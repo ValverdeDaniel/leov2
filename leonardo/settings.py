@@ -86,7 +86,7 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         'PORT': '5432', #we added this manually it is usually 5432
-        "NAME": "btredb",
+        "NAME": "Leodb",
         'USER': 'postgres',
         'PASSWORD': '44Mooses',
         'HOST': 'localhost'
