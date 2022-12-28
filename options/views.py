@@ -7,6 +7,142 @@ import time
 import json
 import requests
 import pandas as pd
+import numpy as np
+from dateutil.relativedelta import relativedelta
+from datetime import datetime
+
+
+class StockDetail():
+
+    api_key = 'ADLK0ZK57SB9BJKX'
+
+    def __init__(self, symbol):
+
+        self.symbol = symbol
+    # returns a bunch of information like a description of the company, marketcap, 52 week lows and highs, EPS, Dividend, etc.
+    def get_company_overview(self):
+
+        url = 'https://www.alphavantage.co/query?function=OVERVIEW&symbol='+self.symbol+'&apikey='+self.api_key
+        response = requests.get(url)
+        response_json = response.json()
+
+        if len(response_json) == 0:
+            return "No data found."
+
+        return response_json
+
+    #retrieves current price of Stock
+    def get_quote(self): 
+
+        url = 'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol='+self.symbol+'&apikey='+self.api_key
+        response = requests.get(url)
+        response_json = response.json()
+
+        if len(response_json) == 0:
+            return "No data found."
+
+        response_json = {x[4:].replace(' ','_'): v 
+            for x, v in response_json['Global Quote'].items()}
+
+        return response_json
+    
+    #monthly price data
+    def get_monthly_adjusted(self):
+
+        url = 'https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY_ADJUSTED&symbol='+self.symbol+'&apikey='+self.api_key
+        response = requests.get(url)
+        response_json = response.json()
+
+        if list(response_json.keys())[0] == 'Error Message':
+            return "No data found."
+
+        return response_json
+
+    #live price data from yahooQuery
+    def get_price(self):
+
+        ticker = Ticker(self.symbol)
+        raw_dict = ticker.price
+        df = pd.DataFrame.from_dict(raw_dict)
+
+        return df
+    
+    #returns earnings trend data
+    def get_earnings_trend(self):
+
+        ticker = Ticker(self.symbol)
+        raw_dict = ticker.earnings_trend
+
+        output_dict = {}
+        output_dict['currentQtr'] = raw_dict[self.symbol]['trend'][0]['epsTrend']
+        output_dict['nextQtr'] = raw_dict[self.symbol]['trend'][1]['epsTrend']
+        output_dict['currentYr'] = raw_dict[self.symbol]['trend'][2]['epsTrend']
+        output_dict['nextYr'] = raw_dict[self.symbol]['trend'][3]['epsTrend']
+
+        return output_dict
+
+    def get_option_chain(self, **kwargs):
+
+        ticker = Ticker(self.symbol)
+        df = ticker.option_chain
+
+        if type(df) is str:
+            if df == 'No option chain data found':  
+                return "No data found."
+                
+        df.reset_index(inplace=True)
+        df = df[df['optionType']=='puts']
+
+        expireDates = df['expiration'].dt.strftime("%Y-%m-%d").unique()    
+
+        df['mid'] = ( ( df['bid'] + df['ask'] ) / 2 ).round(2)
+        df['timeToExpire'] = (df['expiration'] - pd.Timestamp.today()).round('1d').dt.days + 1
+        df['multiplier'] = 365 / df['timeToExpire']
+        df['return'] = ( df['multiplier'] * df['mid'] * 100 ) / ( df['strike'] * 100 )
+        df.drop(['optionType', 'contractSymbol', 'currency', 'contractSize', 'lastTradeDate', 'impliedVolatility', 'multiplier'], axis=1, inplace=True)
+        df['change'] = df['change'].round(2)
+        df['percentChange'] = df['percentChange'].round(2)
+        df['return'] = (df['return'] * 100).round(2)
+
+        # Set filters
+        if kwargs['expiration'] != 'all' and kwargs['expiration'] != None:
+            df = df[ df['expiration'] == kwargs['expiration'] ]
+
+        if kwargs['strikeMin'] != '' and kwargs['strikeMin'] != None:
+            df = df[ df['strike'] >= int(kwargs['strikeMin']) ]
+
+        if kwargs['strikeMax'] != '' and kwargs['strikeMax'] != None:
+            df = df[ df['strike'] <= int(kwargs['strikeMax']) ]
+
+        if kwargs['returnMin'] != '' and kwargs['returnMin'] != None:
+            df = df[ df['return'] >= int(kwargs['returnMin']) ]
+
+        if kwargs['returnMax'] != '' and kwargs['returnMax'] != None:
+            df = df[ df['return'] <= int(kwargs['returnMax']) ]
+
+        if kwargs['timeToExpireMin'] != '' and kwargs['timeToExpireMin'] != None:
+            df = df[ df['timeToExpire'] >= int(kwargs['timeToExpireMin']) ]
+
+        if kwargs['timeToExpireMax'] != '' and kwargs['timeToExpireMax'] != None:
+            df = df[ df['timeToExpire'] >= int(kwargs['timeToExpireMax']) ]
+
+        # Format Columns
+        df['expiration'] = df['expiration'].dt.strftime("%Y-%m-%d")
+
+        # Rename Columns
+        column_rename = {
+            'percentChange': '% Change',
+            'openInterest': 'open Int'
+        }
+        df.rename(columns=column_rename, inplace=True)
+
+        results = {}
+        results['columns'] = df.columns.values
+        results['expiration'] = expireDates
+        results['data'] = df
+
+        return results
+
 
 #start of tradingView bits
 def tradingView(
@@ -183,33 +319,17 @@ def tradingView(
     df['price_earnings_ttm'] = df['price_earnings_ttm'].round(2)
     df['earnings_per_share_basic_ttm'] = df['earnings_per_share_basic_ttm'].round(2)
 #     display(df)
-    myTickers = df['name'].to_dict()
+    myListOfTickers = df['name'].to_list()
 #     executionTime = (time.time() - startTime)
 #     tradingViewTime = tradingViewTime + executionTime
-    results = myTickers
 
     # return render(request, 'options/options.html', results)
-    return results
-
-# Create your views here.
-def index(request):
-
-    ticker = 'aapl'
-    yq_ticker = Ticker(ticker)
-    quotes = yq_ticker.price
-
-    myTickers = tradingView()
-    results = {'quotes': quotes, 'myTickers': myTickers}
-
-    return render(request, 'options/options.html', results)
-
-
-
+    return myListOfTickers
 
 #function for getting current price of ticker
 def getCurrentPrice(ticker):
     global getCurrentPriceTime
-    startTime = time.time()
+    # startTime = time.time()
 
     yq_ticker = Ticker(ticker)
     #may contain EPS and shares outstanding
@@ -225,8 +345,208 @@ def getCurrentPrice(ticker):
     groupA = [[now, ticker, currentPrice]]
     groupA_cols = ['dateTime', 'ticker', 'currentPrice']
     livePrice_dfA = pd.DataFrame(groupA, columns = groupA_cols)
+    # livePrice_dictA = livePrice_dfA.to_dict()
     
-    executionTime = (time.time() - startTime)
-    getCurrentPriceTime = getCurrentPriceTime + executionTime
+    # executionTime = (time.time() - startTime)
+    # getCurrentPriceTime = getCurrentPriceTime + executionTime
     
     return livePrice_dfA
+
+
+global AlphaVantageKey
+#basic key AlphaVantageKey = 'XEQ9AFU8KM035KMG'
+#premium api key
+AlphaVantageKey = 'ZTB6U564ILR50HU3'
+def fairValue_hist(ticker):
+    global AlphaVantageKey
+    global getFairValueTime
+    startTime = time.time()
+    
+    yq_ticker = Ticker(ticker)
+    # replace the "demo" apikey below with your own key from https://www.alphavantage.co/support/#api-key
+    url = 'https://www.alphavantage.co/query?function=EARNINGS&symbol='+ticker+'&apikey='+AlphaVantageKey
+    r = requests.get(url)
+    data = r.json()
+    # print(type(data['annualEarnings']))
+    # display(data['fannualEarnings'])
+    df = pd.DataFrame(data['annualEarnings'])
+    df['fiscalDateEnding'] = pd.to_datetime(df['fiscalDateEnding'])
+    filtered_values = np.where((df['fiscalDateEnding'] > '2017-01-01') & (df['fiscalDateEnding'] < '2020-01-01'))
+    # display(filtered_values)
+    eps1 = df.loc[filtered_values]
+#     display(eps1)
+    # print(filtered_values)
+
+    testPrice = []
+    reportedEPS_cols = []
+    pe_cols = []
+    testPrice_cols = []
+
+    for index, row in eps1.iterrows():
+        #retrieving testPrice from Past #change to 30-60 days average
+        testPriceDateStart = row['fiscalDateEnding'] + relativedelta(months=+3)
+        testPriceDateEnd = row['fiscalDateEnding'] + relativedelta(months=+4)
+        df = yq_ticker.history(period='6y', interval='1d')
+        priceHistory = pd.DataFrame(df)
+        priceHistory = priceHistory.reset_index()
+        priceHistory['date']= pd.to_datetime(priceHistory['date'])
+        mask = (priceHistory['date'] > testPriceDateStart) & (priceHistory['date'] < testPriceDateEnd)
+        avg_price = priceHistory.loc[mask]
+        avgTestPrice = avg_price['close'].mean()
+        testPrice.append(avgTestPrice)
+        currentYear = row['fiscalDateEnding'].strftime("%Y")
+
+        #making all the columns
+        reportedEPS_cols.append('reportedEPS' + currentYear)
+        pe_cols.append('p/e'+currentYear)
+        testPrice_cols.append('avgPrice' + currentYear)
+        testdf = pd.DataFrame(testPrice)
+#         print('testdf')
+#         display(testdf)
+
+    #building vertical dataframe which ends up getting transposed
+    eps1.reset_index(drop=True)
+    eps1['testPrice'] = testdf.values
+    eps1['reportedEPS'] = eps1['reportedEPS'].astype(float)
+    eps1['p/e'] = eps1['testPrice']/eps1['reportedEPS']
+    eps1['avgP/E'] = eps1['p/e'].mean()
+    #current yr estimate
+    currentYrEstimate = StockDetail('HRB').get_earnings_trend()['currentYr']['current']
+    eps1['currentYrEstimate'] = currentYrEstimate
+    eps1['FairValue'] = eps1['avgP/E'] * eps1['currentYrEstimate']
+    
+    #bulding long data lists which is what we actually use for fv_df
+    data = eps1['reportedEPS'].to_list()
+    data.extend(eps1['testPrice'].to_list())
+    data.extend(eps1['p/e'].to_list())
+    data.append(eps1['currentYrEstimate'].values[0])
+    data.append(eps1['FairValue'].values[0])
+
+    #creating final long data row from lists
+    fv_df_cols = reportedEPS_cols + testPrice_cols + pe_cols + ['currentYrEstimate', 'FairValue']
+#     print(fv_df_cols)
+    fv_df = pd.DataFrame(data = [data], columns = fv_df_cols)
+
+    # executionTime = (time.time() - startTime)
+    # getFairValueTime = getFairValueTime + executionTime
+
+    return fv_df
+
+
+def get_options(ticker, daysOut_start, daysOut_end):
+    
+    # global getOptionsTime
+    # startTime = time.time()
+
+    #getting options chain
+    
+    yq_ticker = Ticker(ticker)
+    df = pd.DataFrame(yq_ticker.option_chain)
+    # display(df)
+    df = df.reset_index()
+#     print('the columns available from option_chain call')
+#     display(df.columns)
+    tdf = pd.DataFrame(df[['symbol', 'expiration', 'optionType', 'strike', 'currency', 'lastPrice', 'volume', 'openInterest', 'bid', 'ask', 'lastTradeDate']])    
+    tdf = tdf[tdf['optionType'] == 'puts']
+    
+    #filtering the data down a bit by date
+    options_date_start = (pd.to_datetime('today')  + pd.Timedelta(daysOut_start)).strftime('%Y-%m-%d')
+    options_date_end = (pd.to_datetime('today')  + pd.Timedelta(daysOut_end)).strftime('%Y-%m-%d')
+    tdf = tdf[tdf['expiration'] < options_date_end]
+    tdf = tdf[tdf['expiration'] > options_date_start]
+    
+    
+    #calculating return
+    tdf['midBid'] = (tdf['bid'] + tdf['ask'])/2
+    tdf['today'] = pd.to_datetime("today")
+    tdf['time'] = (tdf['expiration'] - tdf['today']).dt.days
+    tdf['multiplier'] = 365/tdf['time']
+    tdf['return'] = (tdf['multiplier']*tdf['midBid']*100)/(tdf['strike']*100)
+#     tdf = tdf[tdf['return'] > .06]
+
+    options_dfC = pd.DataFrame(tdf)
+    
+    # executionTime = (time.time() - startTime)
+    # getOptionsTime = getOptionsTime + executionTime
+    
+    return(options_dfC)
+
+
+#the filtering for only fair value and strike price < (.8 * CP) *.75
+def opportunityFiltering(df):
+    df = df[df['currentPrice'] < df['FairValue']*.8]
+    df = df[df['strike'] < (df['FairValue']*.8)*.75]
+    df = df[df['return'] > .06]
+    return df
+    
+
+def df_builder1(ticker, daysOut_start, daysOut_end):
+    # global dfBuilder1Time
+    # startTime = time.time()
+    
+    #building the dataframe parts A,B, and C
+    dfA = getCurrentPrice(ticker)
+    dfB = fairValue_hist(ticker)
+    dfC = get_options(ticker, daysOut_start, daysOut_end)
+    leo_df = pd.DataFrame(dfC)
+
+    #adding the current price data to dataframe
+    leo_df['dateTime'] = dfA['dateTime'].values[0]
+    leo_df['ticker'] = dfA['ticker'].values[0]
+    leo_df['currentPrice'] = dfA['currentPrice'][0]
+    
+    #the dfB fair value bit
+    leo_df[[dfB.columns.values]] = 0
+    #loops through and adds the dfB columns to leo 1 column at a time in reverse
+    for i in range(1,len(dfB.columns)+1):
+        leo_df.iloc[:, -i] = dfB.iloc[:,-i].values[0]
+    
+    #THIS IS WHAT YOU COMMENT OUT FOR THE SINGLE LOOKUP
+    #the filtering for only fair value and strike price < (.8 * CP) *.75
+    # leo_df = opportunityFiltering(leo_df)
+
+    # executionTime = (time.time() - startTime)
+    # dfBuilder1Time = dfBuilder1Time + executionTime
+    return leo_df
+# Create your views here.
+# def index(request):
+
+#     ticker = 'AAPL'
+#     yq_ticker = Ticker(ticker)
+#     quotes = yq_ticker.price
+#     myTickers = tradingView()
+#     myCurrentPrice = getCurrentPrice(ticker)
+#     fv = fairValue_hist(ticker)
+#     get_options(ticker, daysOut_start, daysOut_end)
+#     # results = {'quotes': quotes, 'myTickers': myTickers}
+
+#     # return render(request, 'options/options.html', results)
+#     return render(request, 'options/options.html')
+
+
+def index(request):
+
+    ticker = 'AAPL'
+    daysOut_start = '30d'
+    daysOut_end = '120d'    
+    df = df_builder1(ticker, daysOut_start, daysOut_end)
+    data = df.to_dict()
+    # json_records = df.to_json()
+    # data = []
+    # data = json.loads(json_records)
+    context = {'d': data}
+    return render(request, 'options/options.html', context)
+
+ticker = 'AAPL'
+# tickerList = ['MSFT', 'GM']
+
+daysOut_start = '30d'
+daysOut_end = '120d'
+
+# trading view filters 
+mktCapMin = 5000000000
+div_yield_recent = 2
+StochK = 25
+StochD = 25
+macd_macd = 0
+macd_signal = 0
