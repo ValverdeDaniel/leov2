@@ -22,3 +22,4 @@ python manage.py startapp contacts #create app called contacts
 python manage.py makemigrations contacts #create migration file contacts
 python manage.py migrate
 ################
+tests
