@@ -65,35 +65,17 @@
             <tr>
                 <th>symbol</th>
 
-                <th>expiration</th>
+                <th>current Price</th>
+
+                <th>Fair Value</th>
             
-                <th>optionType</th>
+                <th>Max Exp Date Days</th>
             
-                <th>strike</th>
+                <th>Min Exp Date Days</th>
             
                 <th>currency</th>
             
                 <th>lastPrice</th>
-            
-                <th>openInterest</th>
-            
-                <th>bid</th>
-            
-                <th>ask</th>
-            
-                <th>lastTradeDate</th>
-            
-                <th>lastTradeDate</th>
-            
-                <th>lastTradeDate</th>
-            
-                <th>lastTradeDate</th>
-            
-                <th>lastTradeDate</th>
-            
-                <th>lastTradeDate</th>
-            
-                <th>lastTradeDate</th>
             </tr>
           
 
@@ -101,13 +83,16 @@
         {% if d %}  
         <tbody>
         <!-- jinja2 Technique -->
-        {% for i in d.symbol.values %}
+        {% for i in d %}
                 <tr>
-                    <td><a href="https://www.w3schools.com">{{ i }}</a></td>
+                    <td>{{ i.symbol }}</td>
+                    <td>{{ i.currentPrice }}</td>
+                    <td>{{ i.FairValue }}</td>
                 </tr>
         {% endfor %}
-        </tbody>
         {% endif %}
+        </tbody>
+
     </table>
 <br>
 

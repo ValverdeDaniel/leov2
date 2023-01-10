@@ -523,17 +523,46 @@ def df_builder1(ticker, daysOut_start, daysOut_end):
 #     # return render(request, 'options/options.html', results)
 #     return render(request, 'options/options.html')
 
+def dfClean(bigDF):
+    finalCols = ['symbol', 'expiration', 'optionType', 'strike', 'bid', 'ask', 'midBid', 'time', 'return', 'ticker', 'currentPrice']
+    colsAdd = list(bigDF.columns[-5:])
+    finalCols.extend(colsAdd)
+    bigDF = bigDF[finalCols]
+    bigDF = pd.DataFrame(bigDF)
+    bigDF['expiration'] = bigDF['expiration'].astype(str)
+    bigDF = bigDF.dropna()
+    return bigDF
+
+
+def df_builderList(tickerList, daysOut_start, daysOut_end):
+    
+    ticker1 = 'AAPL'
+    leo_df1 = df_builder1(ticker1, daysOut_start, daysOut_end)
+    for ticker in tickerList:
+        try:
+            print('working on the', ticker, 'df')
+            df2append = df_builder1(ticker, daysOut_start, daysOut_end)
+            leo_df1 = leo_df1.append(df2append)
+        except Exception as e:
+            print(e)
+            print('we are skipping: ', ticker)
+            
+    #cleans the final DataFrame
+    leo_df1 = dfClean(leo_df1)
+    return leo_df1
+
 
 def index(request):
 
     ticker = 'AAPL'
     daysOut_start = '30d'
     daysOut_end = '120d'    
-    df = df_builder1(ticker, daysOut_start, daysOut_end)
-    data = df.to_dict()
-    # json_records = df.to_json()
-    # data = []
-    # data = json.loads(json_records)
+    tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)[:3]    
+    df = df_builderList(tickerList, daysOut_start, daysOut_end)    
+    # data = df.to_dict()
+    json_records = df.reset_index().to_json(orient ='records')
+    data = []
+    data = json.loads(json_records)
     context = {'d': data}
     return render(request, 'options/options.html', context)
 
