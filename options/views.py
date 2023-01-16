@@ -1,4 +1,6 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from django.utils.http import urlencode
 import yahooquery
 import requests
 import json
@@ -556,12 +558,38 @@ def df_builderList(tickerList, daysOut_start, daysOut_end):
             print('we are skipping: ', ticker)
             
     #cleans the final DataFrame
-    # leo_df1 = dfClean(leo_df1)
+    leo_df1 = dfClean(leo_df1)
     return leo_df1
 
-def filterStocks(request):
-    breakpoint()
+def filterStocks(data, minimumReturn, belowFV, maxExp, minExp):
+    # breakpoint()
+    validItem = []
+    for item in data:
+        if minimumReturn:
+            if item['return'] < float(minimumReturn):
+                continue
+        if belowFV:
+            if item['FairValue'] > float(belowFV):
+                continue
+        expiration = datetime.strptime(item['expiration'], "%Y-%m-%d")
+        if minExp:
+            if expiration < datetime.strptime(minExp, "%Y-%m-%d"):
+                continue
+        if maxExp:
+            if expiration > datetime.strptime(maxExp, "%Y-%m-%d"):
+                continue
+        validItem.append(item)
+    return validItem
+
+
+        # if item 
     a = 1
+    # data = list(
+    #     filter(
+    #         lambda x: x.get("FairValue") <= int(belowFV),
+    #         cache_value,
+    #     )
+    # )
     return a
 
 def index(request):
@@ -593,6 +621,13 @@ def index(request):
     macd_signal = int(payload.get('macd_signal', def_macd_signal))
     
     key = hashlib.md5(f'{mktCapMin}{div_yield_recent}{StochD}{StochK}{macd_macd}{macd_signal}'.encode('utf-8')).hexdigest()
+    filter_values = {'mktCapMin': mktCapMin,
+        'div_yield_recent': div_yield_recent,
+        'StochD': StochD,
+        'StochK': StochK,
+        'macd_macd': macd_macd,
+        'macd_signal': macd_signal}
+
     if request.method == 'POST':
         form_data = request.POST
         cache_key = form_data.get('cache_key')
@@ -602,23 +637,23 @@ def index(request):
         belowFV = form_data.get('belowFV', def_belowFV)
         minExp = form_data.get('minExp', def_minExp)
         maxExp = form_data.get('maxExp', def_maxExp)
-        macd_macd = form_data.get('macd_macd', def_macd_macd)
-        macd_signal = form_data.get('macd_signal', def_macd_signal)
+
         
         cache_value = cache.get(cache_key)
         if cache_value:
-            data = list(
-                    filter(
-                        lambda x: x.get("FairValue") <= int(belowFV),
-                        cache_value,
-                    )
-                )
+            # breakpoint()
+            data = filterStocks(cache_value, minimumReturn, belowFV, maxExp, minExp)
+        else:
+            url = reverse('options')
+            return redirect(url)
+
     else:
         # breakpoint()
         data = []
         value = cache.get(key)
         if value:
             data = value
+            # pass
         else:
             tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)[:3]    
             df = df_builderList(tickerList, daysOut_start, daysOut_end)
@@ -628,14 +663,9 @@ def index(request):
             #data = []
             # data = df.to_dict()
             data = json.loads(df.reset_index().to_json(orient ='records'))
-            cache.set(key, data, timeout=60*5)
+            cache.set(key, data, timeout=60*15)
         
-    filter_values = {'mktCapMin': mktCapMin,
-        'div_yield_recent': div_yield_recent,
-        'StochD': StochD,
-        'StochK': StochK,
-        'macd_macd': macd_macd,
-        'macd_signal': macd_signal}
+
     # data = json.loads(data)
     context = {'d': data, 'filter_values': filter_values, 'cache_key': key}
     return render(request, 'options/options.html', context)
