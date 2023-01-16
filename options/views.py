@@ -10,7 +10,9 @@ import pandas as pd
 import numpy as np
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
-
+from .helpers import cache_request
+from django.core.cache import cache
+import hashlib
 
 class StockDetail():
 
@@ -308,7 +310,8 @@ def tradingView(
     response = requests.request("POST", url, headers=headers, data=payload)
 
     response_json = response.json()['data']
-
+    if not response_json:
+        return []
     df0 = pd.DataFrame.from_dict(response_json)
     df0.drop(columns=['s'], inplace=True)
     df = pd.DataFrame(df0["d"].to_list(), columns=columns)
@@ -327,6 +330,7 @@ def tradingView(
     return myListOfTickers
 
 #function for getting current price of ticker
+# @cache_request()
 def getCurrentPrice(ticker):
     global getCurrentPriceTime
     # startTime = time.time()
@@ -357,6 +361,7 @@ global AlphaVantageKey
 #basic key AlphaVantageKey = 'XEQ9AFU8KM035KMG'
 #premium api key
 AlphaVantageKey = 'ZTB6U564ILR50HU3'
+# @cache_request()
 def fairValue_hist(ticker):
     global AlphaVantageKey
     global getFairValueTime
@@ -432,7 +437,7 @@ def fairValue_hist(ticker):
 
     return fv_df
 
-
+# @cache_request()
 def get_options(ticker, daysOut_start, daysOut_end):
     
     # global getOptionsTime
@@ -454,6 +459,8 @@ def get_options(ticker, daysOut_start, daysOut_end):
     options_date_end = (pd.to_datetime('today')  + pd.Timedelta(daysOut_end)).strftime('%Y-%m-%d')
     tdf = tdf[tdf['expiration'] < options_date_end]
     tdf = tdf[tdf['expiration'] > options_date_start]
+    # tdf['minExp'] = tdf['expiration'].min()
+    # tdf['maxExp'] = tdf['expiration'].max()
     
     
     #calculating return
@@ -507,6 +514,7 @@ def df_builder1(ticker, daysOut_start, daysOut_end):
 
     # executionTime = (time.time() - startTime)
     # dfBuilder1Time = dfBuilder1Time + executionTime
+    # breakpoint()
     return leo_df
 # Create your views here.
 # def index(request):
@@ -533,11 +541,11 @@ def dfClean(bigDF):
     bigDF = bigDF.dropna()
     return bigDF
 
-
 def df_builderList(tickerList, daysOut_start, daysOut_end):
     
     ticker1 = 'AAPL'
     leo_df1 = df_builder1(ticker1, daysOut_start, daysOut_end)
+    # breakpoint()
     for ticker in tickerList:
         try:
             print('working on the', ticker, 'df')
@@ -548,22 +556,88 @@ def df_builderList(tickerList, daysOut_start, daysOut_end):
             print('we are skipping: ', ticker)
             
     #cleans the final DataFrame
-    leo_df1 = dfClean(leo_df1)
+    # leo_df1 = dfClean(leo_df1)
     return leo_df1
 
+def filterStocks(request):
+    breakpoint()
+    a = 1
+    return a
 
 def index(request):
 
     ticker = 'AAPL'
     daysOut_start = '30d'
     daysOut_end = '120d'    
-    tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)[:3]    
-    df = df_builderList(tickerList, daysOut_start, daysOut_end)    
-    # data = df.to_dict()
-    json_records = df.reset_index().to_json(orient ='records')
-    data = []
-    data = json.loads(json_records)
-    context = {'d': data}
+
+    #payload is request.get and pulls the information from the URL
+    payload = request.GET
+    def_mktCapMin = 5000000000
+    def_div_yield_recent = 2
+    def_StochK = 25
+    def_StochD = 25
+    def_macd_macd = 0
+    def_macd_signal = 0
+
+    def_minimumReturn = None
+    def_belowFV = 100
+    def_minExp = None
+    def_maxExp = None
+    
+    #html values from first trading view filters
+    mktCapMin = int(payload.get('mktCapMin', def_mktCapMin))
+    div_yield_recent = int(payload.get('div_yield_recent', def_div_yield_recent))
+    StochD = int(payload.get('StochD', def_StochD))
+    StochK = int(payload.get('StochK', def_StochK))
+    macd_macd = int(payload.get('macd_macd', def_macd_macd))
+    macd_signal = int(payload.get('macd_signal', def_macd_signal))
+    
+    key = hashlib.md5(f'{mktCapMin}{div_yield_recent}{StochD}{StochK}{macd_macd}{macd_signal}'.encode('utf-8')).hexdigest()
+    if request.method == 'POST':
+        form_data = request.POST
+        cache_key = form_data.get('cache_key')
+        
+        #values from second filters
+        minimumReturn = form_data.get('minimumReturn', def_minimumReturn)
+        belowFV = form_data.get('belowFV', def_belowFV)
+        minExp = form_data.get('minExp', def_minExp)
+        maxExp = form_data.get('maxExp', def_maxExp)
+        macd_macd = form_data.get('macd_macd', def_macd_macd)
+        macd_signal = form_data.get('macd_signal', def_macd_signal)
+        
+        cache_value = cache.get(cache_key)
+        if cache_value:
+            data = list(
+                    filter(
+                        lambda x: x.get("FairValue") <= int(belowFV),
+                        cache_value,
+                    )
+                )
+    else:
+        # breakpoint()
+        data = []
+        value = cache.get(key)
+        if value:
+            data = value
+        else:
+            tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)[:3]    
+            df = df_builderList(tickerList, daysOut_start, daysOut_end)
+            print(df)
+            print('tickerList:', tickerList)
+            df = df.drop_duplicates(subset='symbol')
+            #data = []
+            # data = df.to_dict()
+            data = json.loads(df.reset_index().to_json(orient ='records'))
+            cache.set(key, data, timeout=60*5)
+        
+    filter_values = {'mktCapMin': mktCapMin,
+        'div_yield_recent': div_yield_recent,
+        'StochD': StochD,
+        'StochK': StochK,
+        'macd_macd': macd_macd,
+        'macd_signal': macd_signal}
+    # data = json.loads(data)
+    context = {'d': data, 'filter_values': filter_values, 'cache_key': key}
     return render(request, 'options/options.html', context)
 
 ticker = 'AAPL'
