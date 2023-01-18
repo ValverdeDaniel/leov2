@@ -670,16 +670,28 @@ def index(request):
     context = {'d': data, 'filter_values': filter_values, 'cache_key': key}
     return render(request, 'options/options.html', context)
 
-ticker = 'AAPL'
-# tickerList = ['MSFT', 'GM']
+def ticker_view(request, ticker):
+    daysOut_start = '30d'
+    daysOut_end = '120d'
+    df = df_builder1(ticker, daysOut_start, daysOut_end)
+    df = dfClean(df)
 
-daysOut_start = '30d'
-daysOut_end = '120d'
+    data = json.loads(df.reset_index().to_json(orient ='records'))
+    context = {'d': data}
 
-# trading view filters 
-mktCapMin = 5000000000
-div_yield_recent = 2
-StochK = 25
-StochD = 25
-macd_macd = 0
-macd_signal = 0
+    return render(request, 'options/ticker.html', context)
+
+
+# ticker = 'AAPL'
+# # tickerList = ['MSFT', 'GM']
+
+# daysOut_start = '30d'
+# daysOut_end = '120d'
+
+# # trading view filters 
+# mktCapMin = 5000000000
+# div_yield_recent = 2
+# StochK = 25
+# StochD = 25
+# macd_macd = 0
+# macd_signal = 0
