@@ -11,9 +11,9 @@
         <div class="home-search p-5">
         <div class="overlay p-5">
             <h1 class="display-4 mb-4">
-            Check Out These Options
+            Trading View Filters
             </h1>
-            <p class="lead">Welcome to Leonardo your one stop shop for all your options information related needs</p>
+            <a href="{% url 'clear_cache' %}"><button>clear cache</button></a>
             <div class="search">
             <form action="{% url 'options' %}">
                 <!-- Form Row 1 -->
@@ -127,7 +127,7 @@
         <!-- jinja2 Technique -->
         {% for i in d %}
                 <tr>
-                    <td><a href="{% url 'ticker' i.symbol %}">{{ i.symbol }}</a></td>
+                    <td><a style='color:white' href="{% url 'ticker' i.symbol %}">{{ i.symbol }}</a></td>
                     <td>{{ i.currentPrice }}</td>
                     <td>{{ i.FairValue }}</td>
                     <td>{{ i.expiration}}</td>

@@ -5,49 +5,47 @@
 {% block title %} | Welcome {% endblock %}
 
 {% block content %}
-    <section id="showcase">
-        <div class="container text-center">
-            <div class="home-search p-5">
-            <div class="overlay p-5">
-                <p class="lead">Single Option</p>
-                <div class="search">
-                <form method="post" action="{% url 'options' %}">
-                    {% csrf_token %}
-                    <!-- Form Row 1 -->
-                    <div class="form-row">
-                    <div class="col-md-4 mb-3">
-                        <label>minimumReturn</label>
-                        <input type="text" name="minimumReturn" class="form-control" placeholder="minimumReturn" value = {{ filter_values.minimumReturn }}>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label>belowFV</label>
-                        <input type="text" name="belowFV" class="form-control" placeholder="belowFV" value = {{ filter_values.belowFV }}>
-                    </div>
-    
-                    <div class="col-md-4 mb-3">
-                        <label>minExp</label>
-                        <input type="text" name="min_exp" class="form-control" placeholder="minExp" value = {{ filter_values.minExp }}>
-                    </div>
-        
-    
-                    </div>
-                    <!-- Form Row 2 -->
-                    <div class="form-row">
+    <!-- <section id="showcase"> -->
+        <div class="container-lg text-center">
+            <div>
+                {% if data_stat %}
+                {% for i in data_stat %}
+                <p class="lead">{{ i.symbol }}</p>
 
-                        <div class="col-md-4 mb-3">
-                            <label>maxExp</label>
-                            <input type="text" name="maxExp" class="form-control" placeholder="maxExp" value = {{ filter_values.maxExp }}>
-                        </div>     
-
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label>symbol: {{ i.symbol }} </label>
                     </div>
-                    <input type="hidden" name="cache_key" class="form-control" value = {{ cache_key }}>
-                    <button class="btn btn-secondary btn-block mt-4" type="submit">Submit form</button>
-                </form>
+                    <div class="col-md-3 mb-3">
+                        <label>price: {{ i.currentPrice }} </label>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label>Fair Value: {{ i.FairValue }} </label>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label>Market Cap:  </label>
+                    </div>
                 </div>
-            </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label>p/e 2019: {{ i.p_e2019}} </label>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label>p/e 2018: {{ i.p_e2018}} </label>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label>p/e 2017: {{ i.p_e2017}} </label>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <p>we have to talk about currentYr</p>
+                        <label>current Yr Est:  {{ i.currentYrEstimate }}</label>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
             </div>
         </div>
-        </section>
+        <!-- </section> -->
 
 
     <!-- {{ d.symbol }} -->
@@ -56,13 +54,16 @@
     <table class="table table-dark table-striped">
         <thead>
             <tr>
-                <th>symbol</th>
 
                 <th>current Price</th>
 
                 <th>Fair Value</th>
+
+                <th>Strike</th>
             
                 <th>Expiration</th>
+
+                <th>Mid Bid</th>
             
                 <th>Return</th>
             
@@ -75,10 +76,11 @@
         <!-- jinja2 Technique -->
         {% for i in d %}
                 <tr>
-                    <td>{{ i.symbol }}</td>
                     <td>{{ i.currentPrice }}</td>
                     <td>{{ i.FairValue }}</td>
+                    <td>{{ i.strike }}</td>
                     <td>{{ i.expiration}}</td>
+                    <td>{{ i.midBid }}</td>
                     <td>{{ i.return }}</td>
 
                 </tr>

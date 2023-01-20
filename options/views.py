@@ -405,7 +405,7 @@ def fairValue_hist(ticker):
 
         #making all the columns
         reportedEPS_cols.append('reportedEPS' + currentYear)
-        pe_cols.append('p/e'+currentYear)
+        pe_cols.append('p_e'+currentYear)
         testPrice_cols.append('avgPrice' + currentYear)
         testdf = pd.DataFrame(testPrice)
 #         print('testdf')
@@ -415,17 +415,17 @@ def fairValue_hist(ticker):
     eps1.reset_index(drop=True)
     eps1['testPrice'] = testdf.values
     eps1['reportedEPS'] = eps1['reportedEPS'].astype(float)
-    eps1['p/e'] = eps1['testPrice']/eps1['reportedEPS']
-    eps1['avgP/E'] = eps1['p/e'].mean()
+    eps1['p_e'] = eps1['testPrice']/eps1['reportedEPS']
+    eps1['avgp_e'] = eps1['p_e'].mean()
     #current yr estimate
     currentYrEstimate = StockDetail('HRB').get_earnings_trend()['currentYr']['current']
     eps1['currentYrEstimate'] = currentYrEstimate
-    eps1['FairValue'] = eps1['avgP/E'] * eps1['currentYrEstimate']
+    eps1['FairValue'] = eps1['avgp_e'] * eps1['currentYrEstimate']
     
     #bulding long data lists which is what we actually use for fv_df
     data = eps1['reportedEPS'].to_list()
     data.extend(eps1['testPrice'].to_list())
-    data.extend(eps1['p/e'].to_list())
+    data.extend(eps1['p_e'].to_list())
     data.append(eps1['currentYrEstimate'].values[0])
     data.append(eps1['FairValue'].values[0])
 
@@ -675,11 +675,20 @@ def ticker_view(request, ticker):
     daysOut_end = '120d'
     df = df_builder1(ticker, daysOut_start, daysOut_end)
     df = dfClean(df)
+    df = df.sort_values(by='return', ascending=False)
 
     data = json.loads(df.reset_index().to_json(orient ='records'))
-    context = {'d': data}
+    df_stat = df.drop_duplicates(subset='symbol')
+    data_stat = json.loads(df_stat.reset_index().to_json(orient ='records'))
+    context = {'d': data, 'data_stat': data_stat}
 
     return render(request, 'options/ticker.html', context)
+
+def clear_cache(request):
+    print('clearing cache')
+    cache.clear()
+    url = reverse('options')
+    return redirect(url)
 
 
 # ticker = 'AAPL'
