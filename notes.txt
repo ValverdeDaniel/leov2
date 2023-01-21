@@ -1,0 +1,36 @@
+    <table class="table table-dark table-striped">
+        <thead>
+            <tr>
+                <th>symbol</th>
+
+                <th>current Price</th>
+
+                <th>Fair Value</th>
+            
+                <th>Max Exp Date Days</th>
+            
+                <th>Min Exp Date Days</th>
+            
+                <th>currency</th>
+            
+                <th>lastPrice</th>
+            </tr>
+          
+
+        </thead>
+        {% if d %}  
+        <tbody>
+        <!-- jinja2 Technique -->
+        {% for i in d.symbol.values %}
+                <tr>
+                    <td><a href="https://www.w3schools.com">{{ i }}</a></td>
+                </tr>
+        {% endfor %}
+        {% for i in d.currentPrice.values %}
+        <tr>
+            <td>{{ i }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+        {% endif %}
+    </table>

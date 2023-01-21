@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.utils.http import urlencode
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 import yahooquery
 import requests
 import json
@@ -534,6 +535,7 @@ def df_builder1(ticker, daysOut_start, daysOut_end):
 #     return render(request, 'options/options.html')
 
 def dfClean(bigDF):
+    
     finalCols = ['symbol', 'expiration', 'optionType', 'strike', 'bid', 'ask', 'midBid', 'time', 'return', 'ticker', 'currentPrice']
     colsAdd = list(bigDF.columns[-5:])
     finalCols.extend(colsAdd)
@@ -541,6 +543,8 @@ def dfClean(bigDF):
     bigDF = pd.DataFrame(bigDF)
     bigDF['expiration'] = bigDF['expiration'].astype(str)
     bigDF = bigDF.dropna()
+    bigDF['FVPercent'] = (bigDF['currentPrice']-bigDF['FairValue'])/bigDF['FairValue']
+
     return bigDF
 
 def df_builderList(tickerList, daysOut_start, daysOut_end):
@@ -561,6 +565,7 @@ def df_builderList(tickerList, daysOut_start, daysOut_end):
     leo_df1 = dfClean(leo_df1)
     return leo_df1
 
+#this is the logic that filters the table within the options page
 def filterStocks(data, minimumReturn, belowFV, maxExp, minExp):
     # breakpoint()
     validItem = []
@@ -657,13 +662,16 @@ def index(request):
         else:
             tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)[:3]    
             df = df_builderList(tickerList, daysOut_start, daysOut_end)
+            df = dfClean(df)
+            print('HIIIII THIS IS CLEAN DF')
             print(df)
-            print('tickerList:', tickerList)
+            
             df = df.drop_duplicates(subset='symbol')
             #data = []
             # data = df.to_dict()
             data = json.loads(df.reset_index().to_json(orient ='records'))
-            cache.set(key, data, timeout=60*15)
+            #cache time out
+            cache.set(key, data, timeout=60*10)
         
 
     # data = json.loads(data)
