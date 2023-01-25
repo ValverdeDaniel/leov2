@@ -82,15 +82,19 @@ WSGI_APPLICATION = 'leonardo.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        'PORT': '5432', #we added this manually it is usually 5432
-        "NAME": "Leodb",
-        'USER': 'postgres',
-        'PASSWORD': '44Mooses',
-        'HOST': 'localhost'
+DATABASES = {    
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
+    # "default": {
+    #     "ENGINE": "django.db.backends.postgresql",
+    #     'PORT': '5432', #we added this manually it is usually 5432
+    #     "NAME": "Leodb",
+    #     'USER': 'postgres',
+    #     'PASSWORD': '44Mooses',
+    #     'HOST': 'localhost'
+    # }
 }
 
 CACHES = {
