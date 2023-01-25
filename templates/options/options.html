@@ -69,16 +69,16 @@
                     <div class="form-row">
                     <div class="col-md-4 mb-3">
                         <label>minimumReturn</label>
-                        <input type="text" name="minimumReturn" class="form-control" placeholder="minimumReturn" value = {{ filter_values.minimumReturn }}>
+                        <input type="number" name="minimumReturn" class="form-control" placeholder="minimumReturn" value = {{ filter_values.minimumReturn }}>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label>belowFV</label>
-                        <input type="text" name="belowFV" class="form-control" placeholder="belowFV" value = {{ filter_values.belowFV }}>
+                        <input type="number" name="belowFV" class="form-control" placeholder="belowFV" value = {{ filter_values.belowFV }}>
                     </div>
     
                     <div class="col-md-4 mb-3">
                         <label>minExp</label>
-                        <input type="text" name="min_exp" class="form-control" placeholder="minExp" value = {{ filter_values.minExp }}>
+                        <input type="number" name="min_exp" class="form-control" placeholder="minExp" value = {{ filter_values.minExp }}>
                     </div>
         
     
@@ -88,7 +88,7 @@
 
                         <div class="col-md-4 mb-3">
                             <label>maxExp</label>
-                            <input type="text" name="maxExp" class="form-control" placeholder="maxExp" value = {{ filter_values.maxExp }}>
+                            <input type="number" name="maxExp" class="form-control" placeholder="maxExp" value = {{ filter_values.maxExp }}>
                         </div>     
 
                     </div>
@@ -118,7 +118,7 @@
             
                 <th>Expiration</th>
             
-                <th>Return</th>
+                <th><a style='color:white' href="{% url 'option' %}?order_by=return&order_mode={{order_mode}}">{% if order_by == 'return' %}<i class="fa fa-arrow-{{sort_icon}}"></i>{% endif %}Return</a></th>
             
             </tr>
           

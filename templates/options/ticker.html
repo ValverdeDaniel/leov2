@@ -59,13 +59,14 @@
 
                 <th>Fair Value</th>
 
-                <th>Strike</th>
+                <th><a style='color:white' href="{% url 'ticker' ticker %}?order_by=strike&order_mode={{order_mode}}">{% if order_by == 'strike' %}<i class="fa fa-arrow-{{sort_icon}}"></i>{% endif %}Strike</a></th>
             
-                <th>Expiration</th>
+                <th><a style='color:white' href="{% url 'ticker' ticker %}?order_by=expiration&order_mode={{order_mode}}">{% if order_by == 'expiration' %}<i class="fa fa-arrow-{{sort_icon}}"></i>{% endif %}Expiration</a></th>
 
                 <th>Mid Bid</th>
+
+                <th><a style='color:white' href="{% url 'ticker' ticker %}?order_by=return&order_mode={{order_mode}}">{% if order_by == 'return' %}<i class="fa fa-arrow-{{sort_icon}}"></i>{% endif %}Return</a></th>
             
-                <th>Return</th>
             
             </tr>
           

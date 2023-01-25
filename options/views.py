@@ -605,6 +605,8 @@ def index(request):
 
     #payload is request.get and pulls the information from the URL
     payload = request.GET
+
+
     def_mktCapMin = 5000000000
     def_div_yield_recent = 2
     def_StochK = 25
@@ -613,7 +615,7 @@ def index(request):
     def_macd_signal = 0
 
     def_minimumReturn = None
-    def_belowFV = 100
+    def_belowFV = None
     def_minExp = None
     def_maxExp = None
     
@@ -626,23 +628,17 @@ def index(request):
     macd_signal = int(payload.get('macd_signal', def_macd_signal))
     
     key = hashlib.md5(f'{mktCapMin}{div_yield_recent}{StochD}{StochK}{macd_macd}{macd_signal}'.encode('utf-8')).hexdigest()
-    filter_values = {'mktCapMin': mktCapMin,
-        'div_yield_recent': div_yield_recent,
-        'StochD': StochD,
-        'StochK': StochK,
-        'macd_macd': macd_macd,
-        'macd_signal': macd_signal}
+    
+    form_data = request.POST
+    cache_key = form_data.get('cache_key')
+    
+    #values from second filters
+    minimumReturn = form_data.get('minimumReturn', def_minimumReturn)
+    belowFV = form_data.get('belowFV', def_belowFV)
+    minExp = form_data.get('minExp', def_minExp)
+    maxExp = form_data.get('maxExp', def_maxExp)
 
     if request.method == 'POST':
-        form_data = request.POST
-        cache_key = form_data.get('cache_key')
-        
-        #values from second filters
-        minimumReturn = form_data.get('minimumReturn', def_minimumReturn)
-        belowFV = form_data.get('belowFV', def_belowFV)
-        minExp = form_data.get('minExp', def_minExp)
-        maxExp = form_data.get('maxExp', def_maxExp)
-
         
         cache_value = cache.get(cache_key)
         if cache_value:
@@ -651,6 +647,7 @@ def index(request):
         else:
             url = reverse('options')
             return redirect(url)
+
 
     else:
         # breakpoint()
@@ -672,23 +669,38 @@ def index(request):
             data = json.loads(df.reset_index().to_json(orient ='records'))
             #cache time out
             cache.set(key, data, timeout=60*10)
-        
+    
+    filter_values = {'mktCapMin': mktCapMin,
+        'div_yield_recent': div_yield_recent,
+        'StochD': StochD,
+        'StochK': StochK,
+        'macd_macd': macd_macd,
+        'macd_signal': macd_signal,
+        'minimumReturn': minimumReturn,
+        'belowFV': belowFV,
+        'minExp': minExp,
+        'maxExp': maxExp}        
 
     # data = json.loads(data)
     context = {'d': data, 'filter_values': filter_values, 'cache_key': key}
     return render(request, 'options/options.html', context)
 
 def ticker_view(request, ticker):
+    payload = request.GET
+    order_by = payload.get('order_by', 'return')
+    order_mode = payload.get('order_mode', 'asc')
     daysOut_start = '30d'
     daysOut_end = '120d'
     df = df_builder1(ticker, daysOut_start, daysOut_end)
     df = dfClean(df)
-    df = df.sort_values(by='return', ascending=False)
+    df = df.sort_values(by=order_by, ascending=order_mode=='asc')
 
     data = json.loads(df.reset_index().to_json(orient ='records'))
     df_stat = df.drop_duplicates(subset='symbol')
     data_stat = json.loads(df_stat.reset_index().to_json(orient ='records'))
-    context = {'d': data, 'data_stat': data_stat}
+    context = {'d': data, 'data_stat': data_stat, 'ticker': ticker, 
+    'order_mode': 'asc' if order_mode == 'desc' else 'desc',
+    'sort_icon': 'down' if order_mode == 'desc' else 'up', 'order_by': order_by}
 
     return render(request, 'options/ticker.html', context)
 
