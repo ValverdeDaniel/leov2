@@ -543,7 +543,7 @@ def dfClean(bigDF):
     bigDF = pd.DataFrame(bigDF)
     bigDF['expiration'] = bigDF['expiration'].astype(str)
     bigDF = bigDF.dropna()
-    bigDF['FVPercent'] = (bigDF['currentPrice']-bigDF['FairValue'])/bigDF['FairValue']
+    bigDF['FVPercent'] = (bigDF['FairValue']-bigDF['currentPrice'])/bigDF['FairValue']
 
     return bigDF
 
@@ -566,15 +566,15 @@ def df_builderList(tickerList, daysOut_start, daysOut_end):
     return leo_df1
 
 #this is the logic that filters the table within the options page
-def filterStocks(data, minimumReturn, belowFV, maxExp, minExp):
+def filterStocks(data, minimumReturn, belowFVP, maxExp, minExp):
     # breakpoint()
     validItem = []
     for item in data:
         if minimumReturn:
             if item['return'] < float(minimumReturn):
                 continue
-        if belowFV:
-            if item['FairValue'] > float(belowFV):
+        if belowFVP:
+            if item['FVPercent'] < float(belowFVP):
                 continue
         expiration = datetime.strptime(item['expiration'], "%Y-%m-%d")
         if minExp:
@@ -591,7 +591,7 @@ def filterStocks(data, minimumReturn, belowFV, maxExp, minExp):
     a = 1
     # data = list(
     #     filter(
-    #         lambda x: x.get("FairValue") <= int(belowFV),
+    #         lambda x: x.get("FairValue") <= int(belowFVP),
     #         cache_value,
     #     )
     # )
@@ -615,7 +615,7 @@ def index(request):
     def_macd_signal = 0
 
     def_minimumReturn = None
-    def_belowFV = None
+    def_belowFVP = None
     def_minExp = None
     def_maxExp = None
     
@@ -634,7 +634,7 @@ def index(request):
     
     #values from second filters
     minimumReturn = form_data.get('minimumReturn', def_minimumReturn)
-    belowFV = form_data.get('belowFV', def_belowFV)
+    belowFVP = form_data.get('belowFVP', def_belowFVP)
     minExp = form_data.get('minExp', def_minExp)
     maxExp = form_data.get('maxExp', def_maxExp)
 
@@ -643,7 +643,7 @@ def index(request):
         cache_value = cache.get(cache_key)
         if cache_value:
             # breakpoint()
-            data = filterStocks(cache_value, minimumReturn, belowFV, maxExp, minExp)
+            data = filterStocks(cache_value, minimumReturn, belowFVP, maxExp, minExp)
         else:
             url = reverse('options')
             return redirect(url)
@@ -657,7 +657,8 @@ def index(request):
             data = value
             # pass
         else:
-            tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)[:3]    
+            # add a [:3] in order to make it shorter
+            tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)[:5]    
             df = df_builderList(tickerList, daysOut_start, daysOut_end)
             df = dfClean(df)
             print('HIIIII THIS IS CLEAN DF')
@@ -670,6 +671,20 @@ def index(request):
             #cache time out
             cache.set(key, data, timeout=60*10)
     
+    #sort logic
+    order_by = payload.get('order_by', 'return')
+    order_mode = payload.get('order_mode', 'asc')
+    ticker = payload.get('ticker','')
+    newDF = pd.DataFrame(data)
+    newDF = newDF.sort_values(by=order_by, ascending=order_mode=='asc')
+
+    data = json.loads(newDF.reset_index().to_json(orient ='records'))
+    # newDF_stat = newDF.drop_duplicates(subset='symbol')
+    # data_stat = json.loads(newDF_stat.reset_index().to_json(orient ='records'))
+    # context = {'d': data, 'data_stat': data_stat, 'ticker': ticker, 
+    # 'order_mode': 'asc' if order_mode == 'desc' else 'desc',
+    # 'sort_icon': 'down' if order_mode == 'desc' else 'up', 'order_by': order_by}
+
     filter_values = {'mktCapMin': mktCapMin,
         'div_yield_recent': div_yield_recent,
         'StochD': StochD,
@@ -677,12 +692,14 @@ def index(request):
         'macd_macd': macd_macd,
         'macd_signal': macd_signal,
         'minimumReturn': minimumReturn,
-        'belowFV': belowFV,
+        'belowFVP': belowFVP,
         'minExp': minExp,
         'maxExp': maxExp}        
 
     # data = json.loads(data)
-    context = {'d': data, 'filter_values': filter_values, 'cache_key': key}
+    context = {'d': data, 'filter_values': filter_values, 'cache_key': key, 'ticker': ticker, 
+    'order_mode': 'asc' if order_mode == 'desc' else 'desc',
+    'sort_icon': 'down' if order_mode == 'desc' else 'up', 'order_by': order_by}
     return render(request, 'options/options.html', context)
 
 def ticker_view(request, ticker):

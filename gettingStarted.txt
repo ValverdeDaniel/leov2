@@ -23,3 +23,7 @@ python manage.py makemigrations contacts #create migration file contacts
 python manage.py migrate
 ################
 tests
+
+
+#when switching from django to sqlite we will run 
+###python manage.py createcachetable

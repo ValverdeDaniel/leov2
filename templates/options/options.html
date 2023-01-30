@@ -72,8 +72,8 @@
                         <input type="number" name="minimumReturn" class="form-control" placeholder="minimumReturn" value = {{ filter_values.minimumReturn }}>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label>belowFV</label>
-                        <input type="number" name="belowFV" class="form-control" placeholder="belowFV" value = {{ filter_values.belowFV }}>
+                        <label>belowFVP</label>
+                        <input type="number" name="belowFVP" class="form-control" placeholder="belowFVP" value = {{ filter_values.belowFVP }}>
                     </div>
     
                     <div class="col-md-4 mb-3">
@@ -114,11 +114,11 @@
 
                 <th>Fair Value</th>
 
-                <th>FV Percent</th>
+                <th><a style='color:white' href="{% url 'options' %}?order_by=FVPercent&order_mode={{order_mode}}">{% if order_by == 'FVPercent' %}<i class="fa fa-arrow-{{sort_icon}}"></i>{% endif %}FV Percent</a></th>
             
-                <th>Expiration</th>
+                <th><a style='color:white' href="{% url 'options' %}?order_by=expiration&order_mode={{order_mode}}">{% if order_by == 'expiration' %}<i class="fa fa-arrow-{{sort_icon}}"></i>{% endif %}Expiration</a></th>
             
-                <th><a style='color:white' href="{% url 'option' %}?order_by=return&order_mode={{order_mode}}">{% if order_by == 'return' %}<i class="fa fa-arrow-{{sort_icon}}"></i>{% endif %}Return</a></th>
+                <th><a style='color:white' href="{% url 'options' %}?order_by=return&order_mode={{order_mode}}">{% if order_by == 'return' %}<i class="fa fa-arrow-{{sort_icon}}"></i>{% endif %}Return</a></th>
             
             </tr>
           
@@ -143,9 +143,9 @@
 
     </table>
 <br>
-    {% for i in d %}
+    <!-- {% for i in d %}
     {{i}}
-    {% endfor %}
+    {% endfor %} -->
 <br>
 
 
