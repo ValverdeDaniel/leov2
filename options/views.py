@@ -663,7 +663,7 @@ def index(request):
             df = dfClean(df)
             print('HIIIII THIS IS CLEAN DF')
             print(df)
-            
+            df = df.sort_values(by='return', ascending=False)
             df = df.drop_duplicates(subset='symbol')
             #data = []
             # data = df.to_dict()
