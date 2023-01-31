@@ -419,7 +419,7 @@ def fairValue_hist(ticker):
     eps1['p_e'] = eps1['testPrice']/eps1['reportedEPS']
     eps1['avgp_e'] = eps1['p_e'].mean()
     #current yr estimate
-    currentYrEstimate = StockDetail('HRB').get_earnings_trend()['currentYr']['current']
+    currentYrEstimate = StockDetail(ticker).get_earnings_trend()['currentYr']['current']
     eps1['currentYrEstimate'] = currentYrEstimate
     eps1['FairValue'] = eps1['avgp_e'] * eps1['currentYrEstimate']
     
@@ -658,7 +658,7 @@ def index(request):
             # pass
         else:
             # add a [:3] in order to make it shorter
-            tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)[:5]    
+            tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)    
             df = df_builderList(tickerList, daysOut_start, daysOut_end)
             df = dfClean(df)
             print('HIIIII THIS IS CLEAN DF')
