@@ -24,6 +24,7 @@ python manage.py migrate
 ################
 tests
 
-
+#REDEPLOYING IN AZURE
 #when switching from django to sqlite we will run 
+#We will also run this whenever you redeploy to azure
 ###python manage.py createcachetable
