@@ -340,23 +340,25 @@ def getCurrentPrice(ticker):
 
     yq_ticker = Ticker(ticker)
     #may contain EPS and shares outstanding
-    quotes = yq_ticker.quotes[ticker]
-
-    currentPrice = (quotes['bid'] + quotes['ask'])/2
+    # quotes = yq_ticker.quotes[ticker]
+    raw_dict = yq_ticker.price
+    currentPrice = raw_dict[ticker]['regularMarketPrice']
+    marketCap = raw_dict[ticker]['marketCap']
+    # currentPrice = (quotes['bid'] + quotes['ask'])/2
 #     print('epsCurrentYear: ', quotes['epsCurrentYear'])
 #     print('sharesOutstanding', quotes['sharesOutstanding'])
 
 #     print('important thing is price, date ticker')
 #     print(ticker, 'currentPrice: ',  currentPrice)
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    groupA = [[now, ticker, currentPrice]]
-    groupA_cols = ['dateTime', 'ticker', 'currentPrice']
+    groupA = [[now, ticker, currentPrice, marketCap]]
+    groupA_cols = ['dateTime', 'ticker', 'currentPrice', 'marketCap']
     livePrice_dfA = pd.DataFrame(groupA, columns = groupA_cols)
     # livePrice_dictA = livePrice_dfA.to_dict()
     
     # executionTime = (time.time() - startTime)
     # getCurrentPriceTime = getCurrentPriceTime + executionTime
-    
+    print('livePrice_dfA: ', livePrice_dfA)
     return livePrice_dfA
 
 
@@ -437,7 +439,7 @@ def fairValue_hist(ticker):
 
     # executionTime = (time.time() - startTime)
     # getFairValueTime = getFairValueTime + executionTime
-
+    print('fv_df_currentYR: ', fv_df)
     return fv_df
 
 # @cache_request()
@@ -504,6 +506,7 @@ def df_builder1(ticker, daysOut_start, daysOut_end):
     leo_df['dateTime'] = dfA['dateTime'].values[0]
     leo_df['ticker'] = dfA['ticker'].values[0]
     leo_df['currentPrice'] = dfA['currentPrice'][0]
+    leo_df['marketCap'] = dfA['marketCap'][0]
     
     #the dfB fair value bit
     leo_df[[dfB.columns.values]] = 0
@@ -535,9 +538,10 @@ def df_builder1(ticker, daysOut_start, daysOut_end):
 #     return render(request, 'options/options.html')
 
 def dfClean(bigDF):
-    
-    finalCols = ['symbol', 'expiration', 'optionType', 'strike', 'bid', 'ask', 'midBid', 'time', 'return', 'ticker', 'currentPrice']
+    print('bigDF: ', bigDF.columns)
+    finalCols = ['symbol', 'expiration', 'optionType', 'strike', 'bid', 'ask', 'midBid', 'time', 'return', 'ticker', 'currentPrice', 'marketCap']
     colsAdd = list(bigDF.columns[-5:])
+    # print('colsAdd: ', colsAdd)
     finalCols.extend(colsAdd)
     bigDF = bigDF[finalCols]
     bigDF = pd.DataFrame(bigDF)
@@ -545,7 +549,7 @@ def dfClean(bigDF):
     bigDF = bigDF.dropna()
     bigDF['FVPercent'] = (bigDF['currentPrice']-bigDF['FairValue'])/bigDF['FairValue']
     # bigDF['FVPercent'] = (bigDF['FairValue']-bigDF['currentPrice'])/bigDF['FairValue']
-
+    # print('bigDF: ', bigDF)
     return bigDF
 
 def df_builderList(tickerList, daysOut_start, daysOut_end):
@@ -659,11 +663,13 @@ def index(request):
             # pass
         else:
             # add a [:3] in order to make it shorter
-            tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)    
+            # tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)
+            tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)[:3]    
             df = df_builderList(tickerList, daysOut_start, daysOut_end)
             df = dfClean(df)
             print('HIIIII THIS IS CLEAN DF')
             print(df)
+            # print('dfClean Cols: ', df.columns)
             df = df.sort_values(by='return', ascending=False)
             df = df.drop_duplicates(subset='symbol')
             #data = []
