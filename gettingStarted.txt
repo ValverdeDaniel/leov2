@@ -8,7 +8,7 @@ django-admin startproject leonardo .
 
 pip freeze
 python -m venv ./venv #create virtual environment
-.\venv\Scripts\activate #activate virtual environment
+.\leovenv\Scripts\activate #activate virtual environment
 python manage.py help
 python manage.py
 python manage.py runserver #run project

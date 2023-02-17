@@ -520,7 +520,6 @@ def df_builder1(ticker, daysOut_start, daysOut_end):
 
     # executionTime = (time.time() - startTime)
     # dfBuilder1Time = dfBuilder1Time + executionTime
-    # breakpoint()
     return leo_df
 # Create your views here.
 # def index(request):
@@ -589,7 +588,13 @@ def filterStocks(data, minimumReturn, belowFVP, maxExp, minExp):
             if expiration > datetime.strptime(maxExp, "%Y-%m-%d"):
                 continue
         validItem.append(item)
-    return validItem
+    try:
+        df = pd.DataFrame(validItem)
+        df = df.sort_values(by='return', ascending=False)
+        df = df.drop_duplicates(subset='symbol')
+        return json.loads(df.reset_index().to_json(orient ='records'))
+    except:
+        return []
 
 
         # if item 
@@ -645,7 +650,7 @@ def index(request):
 
     if request.method == 'POST':
         
-        cache_value = cache.get(cache_key)
+        cache_value = cache.get('rawCacheKey')
         if cache_value:
             # breakpoint()
             data = filterStocks(cache_value, minimumReturn, belowFVP, maxExp, minExp)
@@ -666,11 +671,16 @@ def index(request):
             # tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)
             tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)[:3]    
             df = df_builderList(tickerList, daysOut_start, daysOut_end)
+            print('this is base df: ', df)
             df = dfClean(df)
             print('HIIIII THIS IS CLEAN DF')
             print(df)
             # print('dfClean Cols: ', df.columns)
+            raw_df = df.copy()
+            raw_data = json.loads(raw_df.reset_index().to_json(orient ='records'))
+            cache.set('rawCacheKey', raw_data, timeout=60*10)
             df = df.sort_values(by='return', ascending=False)
+
             df = df.drop_duplicates(subset='symbol')
             #data = []
             # data = df.to_dict()
@@ -680,12 +690,12 @@ def index(request):
     
     #sort logic
     order_by = payload.get('order_by', 'return')
-    order_mode = payload.get('order_mode', 'asc')
+    order_mode = payload.get('order_mode', 'desc')
     ticker = payload.get('ticker','')
     newDF = pd.DataFrame(data)
     newDF = newDF.sort_values(by=order_by, ascending=order_mode=='asc')
 
-    data = json.loads(newDF.reset_index().to_json(orient ='records'))
+    data = json.loads(newDF.to_json(orient ='records'))
     # newDF_stat = newDF.drop_duplicates(subset='symbol')
     # data_stat = json.loads(newDF_stat.reset_index().to_json(orient ='records'))
     # context = {'d': data, 'data_stat': data_stat, 'ticker': ticker, 
