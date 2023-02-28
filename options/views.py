@@ -157,9 +157,11 @@ def tradingView(
     StochD = 25,
     macd_macd = 0,
     macd_signal = 0,
+    StochRSI_K = 25,
+    StochRSI_D = 25
 ):
     global tradingViewTime
-    startTime = time.time()
+    # startTime = time.time()
     filter = [
         {
             "left": "volume",
@@ -234,12 +236,12 @@ def tradingView(
         {
             "left": "Stoch.RSI.K",
             "operation": "less",
-            "right": 25
+            "right": StochRSI_K
         },
         {
             "left": "Stoch.RSI.D",
             "operation": "less",
-            "right": 25
+            "right": StochRSI_D
         }
     ]
     options = {
@@ -598,14 +600,14 @@ def filterStocks(data, minimumReturn, belowFVP, maxExp, minExp):
 
 
         # if item 
-    a = 1
+    # a = 1
     # data = list(
     #     filter(
     #         lambda x: x.get("FairValue") <= int(belowFVP),
     #         cache_value,
     #     )
     # )
-    return a
+    # return a
 
 def index(request):
 
@@ -623,6 +625,8 @@ def index(request):
     def_StochD = 25
     def_macd_macd = 0
     def_macd_signal = 0
+    def_StochRSI_K = 25
+    def_StochRSI_D = 25
 
     def_minimumReturn = None
     def_belowFVP = None
@@ -636,8 +640,10 @@ def index(request):
     StochK = int(payload.get('StochK', def_StochK))
     macd_macd = int(payload.get('macd_macd', def_macd_macd))
     macd_signal = int(payload.get('macd_signal', def_macd_signal))
+    StochRSI_K = int(payload.get('StochRSI_K', def_StochRSI_K))
+    StochRSI_D = int(payload.get('StochRSI_D', def_StochRSI_D))
     
-    key = hashlib.md5(f'{mktCapMin}{div_yield_recent}{StochD}{StochK}{macd_macd}{macd_signal}'.encode('utf-8')).hexdigest()
+    key = hashlib.md5(f'{mktCapMin}{div_yield_recent}{StochD}{StochK}{macd_macd}{macd_signal}{StochRSI_K}{StochRSI_D}'.encode('utf-8')).hexdigest()
     
     form_data = request.POST
     cache_key = form_data.get('cache_key')
@@ -669,7 +675,7 @@ def index(request):
         else:
             # add a [:3] in order to make it shorter
             # tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)
-            tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)[:3]    
+            tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal, StochRSI_K, StochRSI_D)[:3]    
             df = df_builderList(tickerList, daysOut_start, daysOut_end)
             print('this is base df: ', df)
             df = dfClean(df)
@@ -708,6 +714,8 @@ def index(request):
         'StochK': StochK,
         'macd_macd': macd_macd,
         'macd_signal': macd_signal,
+        'StochRSI_K': StochRSI_K,
+        'StochRSI_D': StochRSI_D,
         'minimumReturn': minimumReturn,
         'belowFVP': belowFVP,
         'minExp': minExp,
@@ -729,7 +737,7 @@ def ticker_view(request, ticker):
     df = dfClean(df)
     df = df.sort_values(by=order_by, ascending=order_mode=='asc')
 
-    data = json.loads(df.reset_index().to_json(orient ='records'))
+    data = json.loads(df.reset_index().to_json(orient = 'records'))
     df_stat = df.drop_duplicates(subset='symbol')
     data_stat = json.loads(df_stat.reset_index().to_json(orient ='records'))
     context = {'d': data, 'data_stat': data_stat, 'ticker': ticker, 

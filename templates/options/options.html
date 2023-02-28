@@ -18,35 +18,45 @@
             <form action="{% url 'options' %}">
                 <!-- Form Row 1 -->
                 <div class="form-row">
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label>StochK</label>
                     <input type="text" name="StochK" class="form-control" placeholder="StochK" value = {{ filter_values.StochK }}>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label>mktCapMin</label>
                     <input type="text" name="mktCapMin" class="form-control" placeholder="mktCapMin" value = {{ filter_values.mktCapMin }}>
                 </div>
 
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label>macd_macd</label>
                     <input type="text" name="macd_macd" class="form-control" placeholder="macd_macd" value = {{ filter_values.macd_macd }}>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label>StochRSI_K</label>
+                    <input type="text" name="StochRSI_K" class="form-control" placeholder="StochRSI_K" value = {{ filter_values.StochRSI_K }}>
                 </div>
     
 
                 </div>
                 <!-- Form Row 2 -->
                 <div class="form-row">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label>StochD</label>
                         <input type="text" name="StochD" class="form-control" placeholder="StochD" value = {{ filter_values.StochD }}>
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label>div_yield_recent</label>
                         <input type="text" name="div_yield_recent" class="form-control" placeholder="div_yield_recent" value = {{ filter_values.div_yield_recent }}>
                     </div>     
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label>macd_signal</label>
                         <input type="text" name="macd_signal" class="form-control" placeholder="macd_signal" value = {{ filter_values.macd_signal }}>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <label>StochRSI_D</label>
+                        <input type="text" name="StochRSI_D" class="form-control" placeholder="StochRSI_D" value = {{ filter_values.StochRSI_D }}>
                     </div>
                 </div>
                 <button class="btn btn-secondary btn-block mt-4" type="submit">Submit form</button>
