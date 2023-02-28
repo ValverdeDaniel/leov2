@@ -552,7 +552,6 @@ def dfClean(bigDF):
     return bigDF
 
 def df_builderList(tickerList, daysOut_start, daysOut_end):
-    
     ticker1 = 'AAPL'
     leo_df1 = df_builder1(ticker1, daysOut_start, daysOut_end)
     # breakpoint()
@@ -568,6 +567,7 @@ def df_builderList(tickerList, daysOut_start, daysOut_end):
     #cleans the final DataFrame
     leo_df1 = dfClean(leo_df1)
     return leo_df1
+
 
 #this is the logic that filters the table within the options page
 def filterStocks(data, minimumReturn, belowFVP, maxExp, minExp):
