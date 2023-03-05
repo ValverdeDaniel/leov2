@@ -518,7 +518,7 @@ def df_builder1(ticker, daysOut_start, daysOut_end):
     
     #THIS IS WHAT YOU COMMENT OUT FOR THE SINGLE LOOKUP
     #the filtering for only fair value and strike price < (.8 * CP) *.75
-    leo_df = opportunityFiltering(leo_df)
+    # leo_df = opportunityFiltering(leo_df)
 
     # executionTime = (time.time() - startTime)
     # dfBuilder1Time = dfBuilder1Time + executionTime
