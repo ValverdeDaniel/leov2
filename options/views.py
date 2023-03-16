@@ -549,6 +549,9 @@ def dfClean(bigDF):
     bigDF['expiration'] = bigDF['expiration'].astype(str)
     bigDF = bigDF.dropna()
     bigDF['FVPercent'] = (bigDF['currentPrice']-bigDF['FairValue'])/bigDF['FairValue']
+    bigDF['FVPercent'] = bigDF['FVPercent']*100
+    bigDF['return'] = bigDF['return']*100
+    bigDF = bigDF.round(2)
     # bigDF['FVPercent'] = (bigDF['FairValue']-bigDF['currentPrice'])/bigDF['FairValue']
     # print('bigDF: ', bigDF)
     return bigDF

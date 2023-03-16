@@ -142,9 +142,9 @@
                     <td><a style='color:white' href="{% url 'ticker' i.symbol %}">{{ i.symbol }}</a></td>
                     <td>{{ i.currentPrice }}</td>
                     <td>{{ i.FairValue }}</td>
-                    <td>{{ i.FVPercent }}</td>
+                    <td>{{ i.FVPercent }}%</td>
                     <td>{{ i.expiration}}</td>
-                    <td>{{ i.return }}</td>
+                    <td>{{ i.return }}%</td>
 
                 </tr>
         {% endfor %}
