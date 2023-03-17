@@ -583,7 +583,7 @@ def filterStocks(data, minimumReturn, belowFVP, maxExp, minExp):
             if item['return'] < float(minimumReturn):
                 continue
         if belowFVP:
-            if item['FVPercent'] < float(belowFVP):
+            if item['FVPercent'] > float(belowFVP):
                 continue
         expiration = datetime.strptime(item['expiration'], "%Y-%m-%d")
         if minExp:
@@ -645,21 +645,22 @@ def index(request):
     macd_signal = int(payload.get('macd_signal', def_macd_signal))
     StochRSI_K = int(payload.get('StochRSI_K', def_StochRSI_K))
     StochRSI_D = int(payload.get('StochRSI_D', def_StochRSI_D))
-    
-    key = hashlib.md5(f'{mktCapMin}{div_yield_recent}{StochD}{StochK}{macd_macd}{macd_signal}{StochRSI_K}{StochRSI_D}'.encode('utf-8')).hexdigest()
-    
-    form_data = request.POST
-    cache_key = form_data.get('cache_key')
-    
-    #values from second filters
-    minimumReturn = form_data.get('minimumReturn', def_minimumReturn)
-    belowFVP = form_data.get('belowFVP', def_belowFVP)
-    minExp = form_data.get('minExp', def_minExp)
-    maxExp = form_data.get('maxExp', def_maxExp)
 
-    if request.method == 'POST':
-        
-        cache_value = cache.get('rawCacheKey')
+    #values from second filters
+    minimumReturn = payload.get('minimumReturn', def_minimumReturn)
+    belowFVP = payload.get('belowFVP', def_belowFVP)
+    minExp = payload.get('minExp', def_minExp)
+    maxExp = payload.get('maxExp', def_maxExp)
+
+    key = hashlib.md5(f'{mktCapMin}{div_yield_recent}{StochD}{StochK}{macd_macd}{macd_signal}{StochRSI_K}{StochRSI_D}{minimumReturn}{belowFVP}{minExp}{maxExp}'.encode('utf-8')).hexdigest()
+    
+    # form_data = request.POST
+    # cache_key = form_data.get('cache_key')
+    
+
+
+    if request.method == 'POST':    
+        cache_value = cache.get(key)
         if cache_value:
             # breakpoint()
             data = filterStocks(cache_value, minimumReturn, belowFVP, maxExp, minExp)
@@ -682,29 +683,36 @@ def index(request):
             df = df_builderList(tickerList, daysOut_start, daysOut_end)
             print('this is base df: ', df)
             df = dfClean(df)
-            print('HIIIII THIS IS CLEAN DF')
+            print('THIS IS CLEAN DF')
             print(df)
             # print('dfClean Cols: ', df.columns)
+            
             raw_df = df.copy()
+            #dropping duplicates re comment
+            # raw_df = raw_df.drop_duplicates(subset='symbol')
             raw_data = json.loads(raw_df.reset_index().to_json(orient ='records'))
-            cache.set('rawCacheKey', raw_data, timeout=60*10)
-            df = df.sort_values(by='return', ascending=False)
+            
+            filter_data = filterStocks(raw_data, minimumReturn, belowFVP, maxExp, minExp)
+            # # cache.set(key, filter_data, timeout=60*10)
+            # df = pd.DataFrame(filter_data)
+            # df = df.sort_values(by='return', ascending=False)
 
-            df = df.drop_duplicates(subset='symbol')
-            #data = []
-            # data = df.to_dict()
-            data = json.loads(df.reset_index().to_json(orient ='records'))
+            # # df = df.drop_duplicates(subset='symbol')
+            # breakpoint()
+            # #data = []
+            # # data = df.to_dict()
+            # data = json.loads(df.reset_index().to_json(orient ='records'))
             #cache time out
-            cache.set(key, data, timeout=60*10)
-    
+            cache.set(key, filter_data, timeout=60*10)
+            data = filter_data
     #sort logic
     order_by = payload.get('order_by', 'return')
     order_mode = payload.get('order_mode', 'desc')
     ticker = payload.get('ticker','')
-    newDF = pd.DataFrame(data)
-    newDF = newDF.sort_values(by=order_by, ascending=order_mode=='asc')
+    # newDF = pd.DataFrame(data)
+    # newDF = newDF.sort_values(by=order_by, ascending=order_mode=='asc')
 
-    data = json.loads(newDF.to_json(orient ='records'))
+    # data = json.loads(newDF.to_json(orient ='records'))
     # newDF_stat = newDF.drop_duplicates(subset='symbol')
     # data_stat = json.loads(newDF_stat.reset_index().to_json(orient ='records'))
     # context = {'d': data, 'data_stat': data_stat, 'ticker': ticker, 
