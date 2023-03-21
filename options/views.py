@@ -158,7 +158,15 @@ def tradingView(
     macd_macd = 0,
     macd_signal = 0,
     StochRSI_K = 25,
-    StochRSI_D = 25
+    StochRSI_D = 25,
+    StochK_operator = 'less',
+    mktCapMin_operator = 'egreater',
+    macd_macd_operator = 'less',
+    StochRSI_K_operator = 'less',
+    StochD_operator = 'less',
+    div_yield_recent_operator = 'egreater',
+    macd_signal_operator = 'less',
+    StochRSI_D_operator = 'less'
 ):
     global tradingViewTime
     # startTime = time.time()
@@ -200,7 +208,7 @@ def tradingView(
         },
         {
             "left": "market_cap_basic",
-            "operation": "egreater",
+            "operation": mktCapMin_operator,
             "right": mktCapMin
         },
         {
@@ -210,37 +218,37 @@ def tradingView(
         },
         {
             "left": "Stoch.K",
-            "operation": "less",
+            "operation": StochK_operator,
             "right": StochK
         },
         {
             "left": "Stoch.D",
-            "operation": "less",
+            "operation": StochD_operator,
             "right": StochD
         },
         {
             "left": "MACD.macd",
-            "operation": "less",
+            "operation": macd_macd_operator,
             "right": macd_macd
         },
         {
             "left": "MACD.signal",
-            "operation": "less",
+            "operation": macd_signal_operator,
             "right": macd_signal
         },
         {
             "left": "dividend_yield_recent",
-            "operation": "egreater",
+            "operation": div_yield_recent_operator,
             "right": div_yield_recent
         },
         {
             "left": "Stoch.RSI.K",
-            "operation": "less",
+            "operation": StochRSI_K_operator,
             "right": StochRSI_K
         },
         {
             "left": "Stoch.RSI.D",
-            "operation": "less",
+            "operation": StochRSI_D_operator,
             "right": StochRSI_D
         }
     ]
@@ -630,6 +638,14 @@ def index(request):
     def_macd_signal = 0
     def_StochRSI_K = 25
     def_StochRSI_D = 25
+    def_StochK_operator = 'less'
+    def_mktCapMin_operator = 'egreater'
+    def_macd_macd_operator = 'less'
+    def_StochRSI_K_operator = 'less'
+    def_StochD_operator = 'less'
+    def_div_yield_recent_operator = 'egreater'
+    def_macd_signal_operator = 'less'
+    def_StochRSI_D_operator = 'less'
 
     def_minimumReturn = None
     def_belowFVP = None
@@ -645,14 +661,24 @@ def index(request):
     macd_signal = int(payload.get('macd_signal', def_macd_signal))
     StochRSI_K = int(payload.get('StochRSI_K', def_StochRSI_K))
     StochRSI_D = int(payload.get('StochRSI_D', def_StochRSI_D))
+    StochK_operator = str(payload.get('StochK_operator', def_StochK_operator))
+    mktCapMin_operator = str(payload.get('mktCapMin_operator', def_mktCapMin_operator))
+    macd_macd_operator = str(payload.get('macd_macd_operator', def_macd_macd_operator))
+    StochRSI_K_operator = str(payload.get('StochRSI_K_operator', def_StochRSI_K_operator))
+    StochD_operator = str(payload.get('StochD_operator', def_StochD_operator))
+    div_yield_recent_operator = str(payload.get('div_yield_recent_operator', def_div_yield_recent_operator))
+    macd_signal_operator = str(payload.get('macd_signal_operator', def_macd_signal_operator))
+    StochRSI_D_operator = str(payload.get('StochRSI_D_operator', def_StochRSI_D_operator))
+
 
     #values from second filters
     minimumReturn = payload.get('minimumReturn', def_minimumReturn)
     belowFVP = payload.get('belowFVP', def_belowFVP)
     minExp = payload.get('minExp', def_minExp)
     maxExp = payload.get('maxExp', def_maxExp)
-
-    key = hashlib.md5(f'{mktCapMin}{div_yield_recent}{StochD}{StochK}{macd_macd}{macd_signal}{StochRSI_K}{StochRSI_D}{minimumReturn}{belowFVP}{minExp}{maxExp}'.encode('utf-8')).hexdigest()
+    # breakpoint()
+    key = hashlib.md5((str(payload.values())or "default_key").encode('utf-8')).hexdigest()
+    # key = hashlib.md5(f'{mktCapMin}{div_yield_recent}{StochD}{StochK}{macd_macd}{macd_signal}{StochRSI_K}{StochRSI_D}{StochK_operator}{minimumReturn}{belowFVP}{minExp}{maxExp}'.encode('utf-8')).hexdigest()
     
     # form_data = request.POST
     # cache_key = form_data.get('cache_key')
@@ -679,7 +705,7 @@ def index(request):
         else:
             # add a [:3] in order to make it shorter
             # tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal)
-            tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal, StochRSI_K, StochRSI_D)[:3]    
+            tickerList = tradingView(mktCapMin, div_yield_recent, StochD, StochK, macd_macd, macd_signal, StochRSI_K, StochRSI_D, StochK_operator, mktCapMin_operator, macd_macd_operator, StochRSI_K_operator, StochD_operator, div_yield_recent_operator, macd_signal_operator, StochRSI_D_operator)[:3]    
             df = df_builderList(tickerList, daysOut_start, daysOut_end)
             print('this is base df: ', df)
             df = dfClean(df)
@@ -727,6 +753,14 @@ def index(request):
         'macd_signal': macd_signal,
         'StochRSI_K': StochRSI_K,
         'StochRSI_D': StochRSI_D,
+        'StochK_operator': StochK_operator,
+        'mktCapMin_operator': mktCapMin_operator,
+        'macd_macd_operator': macd_macd_operator,
+        'StochRSI_K_operator': StochRSI_K_operator,
+        'StochD_operator': StochD_operator,
+        'div_yield_recent_operator': div_yield_recent_operator,
+        'macd_signal_operator': macd_signal_operator,
+        'StochRSI_D_operator': StochRSI_D_operator,
         'minimumReturn': minimumReturn,
         'belowFVP': belowFVP,
         'minExp': minExp,
