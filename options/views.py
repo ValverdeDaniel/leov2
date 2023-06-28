@@ -452,6 +452,83 @@ def fairValue_hist(ticker):
     print('fv_df_currentYR: ', fv_df)
     return fv_df
 
+### START OF SWITCHING TO POLYGON for fair value
+def fairValue_hist2(ticker):
+    global AlphaVantageKey
+    global getFairValueTime
+    startTime = time.time()
+    
+    yq_ticker = Ticker(ticker)
+    # replace the "demo" apikey below with your own key from https://www.alphavantage.co/support/#api-key
+    url = 'https://www.alphavantage.co/query?function=EARNINGS&symbol='+ticker+'&apikey='+AlphaVantageKey
+    r = requests.get(url)
+    data = r.json()
+    # print(type(data['annualEarnings']))
+    # display(data['fannualEarnings'])
+    df = pd.DataFrame(data['annualEarnings'])
+    df['fiscalDateEnding'] = pd.to_datetime(df['fiscalDateEnding'])
+    filtered_values = np.where((df['fiscalDateEnding'] > '2017-01-01') & (df['fiscalDateEnding'] < '2020-01-01'))
+    # display(filtered_values)
+    eps1 = df.loc[filtered_values]
+#     display(eps1)
+    # print(filtered_values)
+
+    testPrice = []
+    reportedEPS_cols = []
+    pe_cols = []
+    testPrice_cols = []
+
+    for index, row in eps1.iterrows():
+        #retrieving testPrice from Past #change to 30-60 days average
+        testPriceDateStart = row['fiscalDateEnding'] + relativedelta(months=+3)
+        testPriceDateEnd = row['fiscalDateEnding'] + relativedelta(months=+4)
+        df = yq_ticker.history(period='6y', interval='1d')
+        priceHistory = pd.DataFrame(df)
+        priceHistory = priceHistory.reset_index()
+        priceHistory['date']= pd.to_datetime(priceHistory['date'])
+        mask = (priceHistory['date'] > testPriceDateStart) & (priceHistory['date'] < testPriceDateEnd)
+        avg_price = priceHistory.loc[mask]
+        avgTestPrice = avg_price['close'].mean()
+        testPrice.append(avgTestPrice)
+        currentYear = row['fiscalDateEnding'].strftime("%Y")
+
+        #making all the columns
+        reportedEPS_cols.append('reportedEPS' + currentYear)
+        pe_cols.append('p_e'+currentYear)
+        testPrice_cols.append('avgPrice' + currentYear)
+        testdf = pd.DataFrame(testPrice)
+#         print('testdf')
+#         display(testdf)
+
+    #building vertical dataframe which ends up getting transposed
+    eps1.reset_index(drop=True)
+    eps1['testPrice'] = testdf.values
+    eps1['reportedEPS'] = eps1['reportedEPS'].astype(float)
+    eps1['p_e'] = eps1['testPrice']/eps1['reportedEPS']
+    eps1['avgp_e'] = eps1['p_e'].mean()
+    #current yr estimate
+    currentYrEstimate = StockDetail(ticker).get_earnings_trend()['currentYr']['current']
+    eps1['currentYrEstimate'] = currentYrEstimate
+    eps1['FairValue'] = eps1['avgp_e'] * eps1['currentYrEstimate']
+    
+    #bulding long data lists which is what we actually use for fv_df
+    data = eps1['reportedEPS'].to_list()
+    data.extend(eps1['testPrice'].to_list())
+    data.extend(eps1['p_e'].to_list())
+    data.append(eps1['currentYrEstimate'].values[0])
+    data.append(eps1['FairValue'].values[0])
+
+    #creating final long data row from lists
+    fv_df_cols = reportedEPS_cols + testPrice_cols + pe_cols + ['currentYrEstimate', 'FairValue']
+#     print(fv_df_cols)
+    fv_df = pd.DataFrame(data = [data], columns = fv_df_cols)
+
+    # executionTime = (time.time() - startTime)
+    # getFairValueTime = getFairValueTime + executionTime
+    print('fv_df_currentYR: ', fv_df)
+    return fv_df
+
+
 # @cache_request()
 def get_options(ticker, daysOut_start, daysOut_end):
     
